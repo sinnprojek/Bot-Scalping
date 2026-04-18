@@ -1,5 +1,8 @@
 # 🧠 1. KONSEP FINAL (ARSITEKTUR SISTEM)
 
+## 🧠 System Architecture
+
+```mermaid
 graph TD
     subgraph External [Sumber Eksternal]
         WS_Indodax[WebSocket Indodax<br>wss://ws3.indodax.com]
@@ -50,7 +53,6 @@ graph TD
     API_Server -- Query --> Redis
     Browser -- REST API --> API_Server
     Strategy -- Error/Alert --> Telegram
-
 
 ## 🔷 PARADIGMA UTAMA
 
