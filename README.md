@@ -1,7 +1,3 @@
-Saya rangkumkan **konsep final yang benar-benar rapi (end-state architecture)** + **struktur repository GitHub** untuk proyek bot scalping kamu. Ini versi yang sudah “dibersihkan dari kompleksitas tidak perlu” tapi tetap enterprise-grade.
-
----
-
 # 🧠 1. KONSEP FINAL (ARSITEKTUR SISTEM)
 
 ## 🔷 PARADIGMA UTAMA
@@ -294,20 +290,3 @@ Sistem ini:
 👉 tapi **event flow + risk control + state consistency**
 
 ---
-
-# 🚀 NEXT STEP (SAYA SARANKAN)
-
-Kalau kamu sudah siap di tahap ini, saya bisa lanjut:
-
-### 🔧 1. Generate full `docker-compose.yml`
-
-### ⚙️ 2. Generate skeleton semua service (langsung bisa run)
-
-### 📡 3. Build ingestor Go Indodax real WebSocket
-
-### 🧠 4. Build strategy RSI live engine Python
-
-### 🔥 5. Connect Redis event pipeline end-to-end
-
-Tinggal bilang:
-👉 “buatkan docker-compose full system”
