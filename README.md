@@ -1,346 +1,241 @@
-# 🧠 1. KONSEP FINAL (ARSITEKTUR SISTEM)
+# 🧠 Bot Scalping - Event-Driven Trading System
 
-## 🧠 System Architecture
+A distributed, event-driven cryptocurrency trading system built with **Go, Python, Node.js, Redis, and Rust**.
 
-```mermaid
-graph TD
-    subgraph External [Sumber Eksternal]
-        WS_Indodax[WebSocket Indodax<br>wss://ws3.indodax.com]
-        REST_Indodax[REST API Indodax<br>https://indodax.com/tapi]
-    end
-
-    subgraph Core [Inti Sistem - Komputer Lokal]
-        subgraph Go_Services [Go Services]
-            Ingestor[Ingestor<br>WebSocket Client]
-            Executor[Executor<br>Order & Risk Manager]
-        end
-
-        subgraph Python_Services [Python Services]
-            Strategy[Strategy Engine<br>Feature Engineering]
-            subgraph Rust_Accel [Rust Acceleration Layer]
-                Calc[Fast Math Lib<br>RSI/MACD/Imbalance]
-            end
-            Strategy -- FFI Call --> Calc
-        end
-
-        subgraph Node_Services [Node.js Services]
-            WS_Server[WebSocket Server<br>Socket.IO / ws]
-            API_Server[REST API Server<br>Express]
-        end
-
-        subgraph Data_Layer [Data & State Layer]
-            Redis[(Redis Server)]
-        end
-
-        subgraph UI [User Interface]
-            Browser[Dashboard Browser<br>React / Vue / Svelte]
-            Telegram[Notifikasi Telegram]
-        end
-    end
-
-    %% Koneksi
-    WS_Indodax -- Data Stream --> Ingestor
-    Ingestor -- Publish market:BTCIDR.* --> Redis
-    Redis -- Subscribe market:* --> Strategy
-    Strategy -- Publish signal:BTCIDR --> Redis
-    Redis -- Subscribe signal:* --> Executor
-    Executor -- Order Request --> REST_Indodax
-    Executor -- Publish order:status --> Redis
-    Executor -- Update State --> Redis
-
-    Redis -- Subscribe * --> WS_Server
-    WS_Server -- Push Data --> Browser
-    API_Server -- Query --> Redis
-    Browser -- REST API --> API_Server
-    Strategy -- Error/Alert --> Telegram
-
-## 🔷 PARADIGMA UTAMA
-
-Sistem kamu bukan “bot trading biasa”, tapi:
-
-> **Event-driven distributed trading system (mini quant infrastructure)**
-
-Semua komunikasi berbasis **event streaming**, bukan polling.
+Designed as a **mini quant infrastructure** for real-time trading, backtesting, and risk-managed execution on Indodax.
 
 ---
 
-## ⚙️ ALUR BESAR SISTEM
+## 🚀 System Overview
 
-```text id="flow1"
-[ Market Data (Indodax WebSocket) ]
-                ↓
-        ┌─────────────────┐
-        │ Ingestor (Go)   │  → normalisasi tick data
-        └─────────────────┘
-                ↓
-        ┌─────────────────┐
-        │ Redis (Event Bus│  ← pusat sistem
-        └─────────────────┘
-                ↓
-   ┌──────────────────────────┐
-   │ Strategy Engine (Python) │ → analisis indikator
-   └──────────────────────────┘
-                ↓
-        signal: BUY / SELL
-                ↓
-   ┌──────────────────────────┐
-   │ Execution Engine (Go)    │ → risk check + order
-   └──────────────────────────┘
-                ↓
-        Indodax REST API
-                ↓
-   ┌──────────────────────────┐
-   │ State Manager            │ → posisi, PnL, recovery
-   └──────────────────────────┘
-                ↓
-   ┌──────────────────────────┐
-   │ Dashboard (Node.js)      │ → monitoring realtime
-   └──────────────────────────┘
+This project is not a simple trading bot.
+
+It is a:
+
+> **Event-driven distributed trading system (mini quant infrastructure)**
+
+All components communicate through a centralized **event bus (Redis)**.
+
+---
+
+## 🧠 Architecture
+
+```mermaid
+graph TD
+    subgraph External
+        WS_Indodax[WebSocket Indodax]
+        REST_Indodax[REST API Indodax]
+    end
+
+    subgraph Core
+        Ingestor[Go Ingestor]
+        Redis[(Redis Event Bus)]
+        Strategy[Python Strategy Engine]
+        Executor[Go Execution Engine]
+        Dashboard[Node.js Dashboard]
+        Telegram[Telegram Alerts]
+    end
+
+    WS_Indodax --> Ingestor
+    Ingestor --> Redis
+    Redis --> Strategy
+    Strategy --> Redis
+    Redis --> Executor
+    Executor --> REST_Indodax
+    Executor --> Redis
+    Redis --> Dashboard
+    Strategy --> Telegram
 ```
 
 ---
 
-# 🧩 2. PRINSIP DESAIN FINAL
+## ⚙️ Core Design Principles
 
-## 🔥 1. SEPARATION OF CONCERNS
+### 🔷 1. Event-Driven Architecture
+All communication flows through Redis events:
 
-* Go → execution + ingestion (low latency)
-* Python → logic / intelligence
-* Node.js → UI + realtime display
-* Redis → satu-satunya sumber event
-
----
-
-## ⚡ 2. EVENT-DRIVEN ONLY
-
-Tidak ada service yang “saling call langsung”.
-
-Semua lewat Redis:
-
-```text id="event1"
-market.tick.BTCIDR
-signal.BTCIDR
+```
+market.tick
+signal.generated
 order.executed
 position.updated
 ```
 
 ---
 
-## 🧠 3. STATELESS SERVICE (kecuali state manager)
+### 🔷 2. Separation of Concerns
 
-* Ingestor = stateless
-* Strategy = stateless
-* Executor = semi-stateful
-* State Manager = satu-satunya sumber truth
+| Component | Responsibility |
+|----------|----------------|
+| Go Ingestor | Market data ingestion (low latency) |
+| Python Strategy | Signal generation & indicators |
+| Go Executor | Risk management & order execution |
+| Redis | Event bus + state store |
+| Node.js Dashboard | Real-time visualization |
+| Telegram | Alerts & notifications |
 
 ---
 
-## 🛡️ 4. RISK FIRST DESIGN
+### 🔷 3. Risk-First Design
 
-Semua order harus lewat:
+Every trade passes through:
 
-```text id="risk1"
+```
 Signal → Risk Check → Position Sizing → Execution
 ```
 
 ---
 
-# 📁 3. STRUKTUR FINAL GITHUB REPOSITORY
+### 🔷 4. Stateless Compute Layers
 
-Ini versi clean dan production-ready:
+- Ingestor → Stateless
+- Strategy → Stateless
+- Executor → Semi-stateful
+- Redis → Single source of truth
 
-```text id="repo1"
+---
+
+## 📁 Project Structure
+
+```
 bot-scalping/
 │
-├── README.md
-├── .gitignore
-├── docker-compose.yml
-├── .env.example
-│
-├── config/
-│   ├── settings.yaml        # strategy + risk config
-│   ├── pairs.yaml           # trading pairs
-│
-├── infra/
-│   ├── redis/
-│   │   └── redis.conf
-│   ├── docker/
-│   │   └── services.yml
-│
-├── state/
-│   ├── positions.json       # open positions
-│   ├── equity.json          # balance history
-│
-├── logs/
-│   ├── ingestor/
-│   ├── strategy/
-│   ├── executor/
+├── config/                  # Strategy & risk configuration
+├── infra/                   # Redis & infrastructure config
+├── state/                  # Persistent trading state
+├── logs/                   # System logs
 │
 ├── services/
-│   │
-│   ├── ingestor-go/
-│   │   ├── cmd/main.go
-│   │   ├── internal/
-│   │   │   ├── websocket/
-│   │   │   ├── redis/
-│   │   │   └── parser/
-│   │
-│   ├── strategy-python/
-│   │   ├── main.py
-│   │   ├── engine/
-│   │   │   ├── indicators.py
-│   │   │   ├── signals.py
-│   │   │   ├── orderbook.py
-│   │
-│   ├── executor-go/
-│   │   ├── cmd/main.go
-│   │   ├── internal/
-│   │   │   ├── risk/
-│   │   │   ├── order/
-│   │   │   ├── state/
-│   │
-│   ├── dashboard-node/
-│   │   ├── server.js
-│   │   ├── public/
-│   │   │   ├── index.html
-│   │   │   ├── app.js
+│   ├── ingestor-go/        # Market data ingestion
+│   ├── strategy-python/    # Strategy engine (indicators & signals)
+│   ├── executor-go/        # Order execution & risk management
+│   ├── dashboard-node/     # Real-time monitoring dashboard
 │
-├── libs/
-│   ├── shared-types/
-│   ├── utils/
-│
-├── tests/
-│   ├── backtest/
-│   ├── paper-trade/
-│
-└── docs/
-    ├── architecture.md
-    ├── trading-strategy.md
+├── libs/                   # Shared utilities
+├── tests/                  # Backtest & paper trading
+└── docs/                   # Architecture & strategy docs
 ```
 
 ---
 
-# 🧠 4. PERAN SETIAP SERVICE (FINAL LOGIC)
+## 🔄 Data Flow
 
-## 🟢 Ingestor (Go)
-
-* connect WebSocket Indodax
-* normalize tick
-* publish ke Redis
-
----
-
-## 🟣 Strategy Engine (Python)
-
-* hitung:
-
-  * RSI
-  * MACD
-  * VWAP
-  * orderbook imbalance
-* generate signal
-
----
-
-## 🔴 Executor (Go)
-
-* receive signal
-* risk validation:
-
-  * max loss
-  * position size
-  * cooldown
-* execute order
+```
+Market Data
+   ↓
+Ingestor (Go)
+   ↓
+Redis Event Bus
+   ↓
+Strategy Engine (Python)
+   ↓
+Signal Event
+   ↓
+Execution Engine (Go)
+   ↓
+Exchange (Indodax)
+   ↓
+State Update
+   ↓
+Dashboard (Node.js)
+```
 
 ---
 
-## 🔵 State Manager
+## ⚙️ Tech Stack
 
-* track:
+### Backend
+- Go (ingestion & execution)
+- Python (strategy engine)
+- Rust (optional acceleration layer)
 
-  * posisi aktif
-  * PnL
-  * recovery state
+### Infrastructure
+- Redis (event bus & state)
+- Docker (containerization)
 
----
-
-## 🟡 Dashboard (Node.js)
-
-* realtime chart
-* signal stream
-* posisi aktif
-* alert system
+### Frontend
+- Node.js (WebSocket + REST API)
+- React / Vue (dashboard UI)
 
 ---
 
-# ⚙️ 5. INFRASTRUCTURE FINAL
+## 📊 Features
 
-## Docker stack:
+- Real-time market data ingestion
+- Technical indicators (RSI, MACD, VWAP)
+- Order book imbalance analysis
+- Risk management system
+- Position sizing (Kelly-based)
+- Circuit breaker protection
+- Paper trading mode
+- Backtesting framework
+- Real-time dashboard
+- Telegram alerts
 
-```text id="infra1"
-- Redis
+---
+
+## 🛡️ Risk Management
+
+Built-in protections:
+
+- Max daily drawdown limit
+- Max loss per trade
+- Consecutive loss cooldown
+- Circuit breaker system
+- Position size control
+
+---
+
+## 🧪 Development Phases
+
+### Phase 1 — Foundation
+- Repository setup
+- Redis + Docker
 - Ingestor service
-- Strategy service
-- Executor service
-- Dashboard service
-```
+
+### Phase 2 — Strategy Engine
+- Indicators (RSI, MACD)
+- Signal generation
+
+### Phase 3 — Execution Layer
+- Order execution
+- Risk engine
+
+### Phase 4 — Monitoring
+- Dashboard
+- Logging system
+
+### Phase 5 — Testing
+- Backtesting
+- Paper trading
+
+### Phase 6 — Live Trading
+- Small capital deployment
+- Gradual scaling
 
 ---
 
-# 🧭 6. DATA FLOW FINAL
+## ⚠️ Disclaimer
 
-```text id="dataflow1"
-Market → Ingestor → Redis → Strategy → Signal → Executor → Order → State → Dashboard
-```
+This project is for **educational and research purposes**.
 
----
-
-# 🧠 7. KARAKTER SISTEM (IMPORTANT DESIGN INTENT)
-
-Sistem ini:
-
-✔ real-time event system
-✔ modular microservices
-✔ fault tolerant
-✔ restart safe (state recovery)
-✔ scalable (bisa dipisah VPS nanti)
+Cryptocurrency trading involves high risk. Use at your own responsibility.
 
 ---
 
-# 🚀 8. ROADMAP IMPLEMENTASI
+## 🧠 Key Insight
 
-## PHASE 1 (foundation)
+The strength of this system is not complexity, but:
 
-* setup repo
-* Redis + Docker
-* ingestor
-
-## PHASE 2 (logic)
-
-* strategy engine
-* signal system
-
-## PHASE 3 (execution)
-
-* executor + risk system
-
-## PHASE 4 (monitoring)
-
-* dashboard + logs
-
-## PHASE 5 (testing)
-
-* backtest + paper trading
-
-## PHASE 6 (live)
-
-* small capital deployment
+- Event-driven design
+- Strict risk control
+- Clean separation of services
+- State consistency via Redis
 
 ---
 
-# 💡 INSIGHT TERPENTING
+## 🚀 Status
 
-👉 Kunci sistem ini bukan complexity
-👉 tapi **event flow + risk control + state consistency**
+> Architecture finalized — implementation phase ready
 
 ---
