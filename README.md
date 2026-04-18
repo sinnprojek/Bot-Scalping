@@ -1,5 +1,57 @@
 # 🧠 1. KONSEP FINAL (ARSITEKTUR SISTEM)
 
+graph TD
+    subgraph External [Sumber Eksternal]
+        WS_Indodax[WebSocket Indodax<br>wss://ws3.indodax.com]
+        REST_Indodax[REST API Indodax<br>https://indodax.com/tapi]
+    end
+
+    subgraph Core [Inti Sistem - Komputer Lokal]
+        subgraph Go_Services [Go Services]
+            Ingestor[Ingestor<br>WebSocket Client]
+            Executor[Executor<br>Order & Risk Manager]
+        end
+
+        subgraph Python_Services [Python Services]
+            Strategy[Strategy Engine<br>Feature Engineering]
+            subgraph Rust_Accel [Rust Acceleration Layer]
+                Calc[Fast Math Lib<br>RSI/MACD/Imbalance]
+            end
+            Strategy -- FFI Call --> Calc
+        end
+
+        subgraph Node_Services [Node.js Services]
+            WS_Server[WebSocket Server<br>Socket.IO / ws]
+            API_Server[REST API Server<br>Express]
+        end
+
+        subgraph Data_Layer [Data & State Layer]
+            Redis[(Redis Server)]
+        end
+
+        subgraph UI [User Interface]
+            Browser[Dashboard Browser<br>React / Vue / Svelte]
+            Telegram[Notifikasi Telegram]
+        end
+    end
+
+    %% Koneksi
+    WS_Indodax -- Data Stream --> Ingestor
+    Ingestor -- Publish market:BTCIDR.* --> Redis
+    Redis -- Subscribe market:* --> Strategy
+    Strategy -- Publish signal:BTCIDR --> Redis
+    Redis -- Subscribe signal:* --> Executor
+    Executor -- Order Request --> REST_Indodax
+    Executor -- Publish order:status --> Redis
+    Executor -- Update State --> Redis
+
+    Redis -- Subscribe * --> WS_Server
+    WS_Server -- Push Data --> Browser
+    API_Server -- Query --> Redis
+    Browser -- REST API --> API_Server
+    Strategy -- Error/Alert --> Telegram
+
+
 ## 🔷 PARADIGMA UTAMA
 
 Sistem kamu bukan “bot trading biasa”, tapi:
