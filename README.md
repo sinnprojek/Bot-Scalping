@@ -111,13 +111,17 @@ bot-scalping/
 ├── libs/
 |    ├── utils/
 ├── logs/
+|    ├── dashboard/
 |    ├── executor/
 |    ├── ingestor/
 |    ├── strategy/
 ├── rust/
 |    ├── calc-core/
 |    |    ├── src/
+|    |    |    ├── lib.rs
 |    |    ├── target/
+|    |    |    ├── release/
+|    |    |    ├── .rustc_info.json
 |    |    ├── Cargo.lock
 |    |    ├── Cargo.toml
 ├── services/
@@ -143,23 +147,38 @@ bot-scalping/
 |    |    ├── cmd/
 |    |    |    ├── main.go
 |    |    ├── internal/
-|    |    |    ├── redis/
 |    |    |    ├── redis_client/
 |    |    |    ├── validator/
 |    |    |    ├── websocket/
+|    |    |    |    ├── client.go
+|    |    |    |    ├── message.go
+|    |    |    |    ├── publisher.go
 |    |    ├── Dockerfile
 |    |    ├── go.mod
 |    |    ├── go.sum
 │    ├── strategy-python/    # Strategy engine (indicators & signals)
 |    |    ├── bridge/
 |    |    ├── engine/
+|    |    |    ├── __pycache__
+|    |    |    ├── __init__.py
+|    |    |    ├── indicators.py
+|    |    |    ├── orderbook.py
+|    |    |    ├── signal_fusion.py
+|    |    |    ├── state_manager.py
+|    |    |    ├── telegram_notifier.py
 |    |    ├── venv/
 |    |    ├── Dockerfile
 |    |    ├── main.py
 |    |    ├── requirements.txt
 ├── shared/                   # Shared utilities
 |    ├── events/
+|    |    ├── event_types.yaml
 |    ├── schemas/
+|    |    ├── market_tick.json
+|    |    ├── order.json
+|    |    ├── orderbook.json
+|    |    ├── position.json
+|    |    ├── signal.json
 ├── state/                  # Persistent trading state
 ├── tests/                  # Backtest & paper trading
 |    ├── backtest/
