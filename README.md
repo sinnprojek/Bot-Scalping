@@ -101,19 +101,76 @@ Signal → Risk Check → Position Sizing → Execution
 bot-scalping/
 │
 ├── config/                  # Strategy & risk configuration
+|    ├── pairs.yaml
+|    ├── settings.yaml
 ├── infra/                   # Redis & infrastructure config
-├── state/                  # Persistent trading state
-├── logs/                   # System logs
-│
+|    ├── docker/
+|    ├── monitoring/
+|    ├── redis/
+|    |    ├── redis.conf
+├── libs/
+|    ├── utils/
+├── logs/
+|    ├── executor/
+|    ├── ingestor/
+|    ├── strategy/
+├── rust/
+|    ├── calc-core/
+|    |    ├── src/
+|    |    ├── target/
+|    |    ├── Cargo.lock
+|    |    ├── Cargo.toml
 ├── services/
-│   ├── ingestor-go/        # Market data ingestion
-│   ├── strategy-python/    # Strategy engine (indicators & signals)
-│   ├── executor-go/        # Order execution & risk management
-│   ├── dashboard-node/     # Real-time monitoring dashboard
-│
-├── libs/                   # Shared utilities
+│    ├── dashboard-node/     # Real-time monitoring dashboard
+|    |    ├── node_modules/
+|    |    ├── public/
+|    |    |    ├── index.html
+|    |    ├── Dockerfile
+|    |    ├── package-lock.json
+|    |    ├── package.json
+|    |    ├── server.js
+│    ├── executor-go/        # Order execution & risk management
+|    |    ├── cmd/
+|    |    |    ├── main.go
+|    |    ├── internal/
+|    |    |    ├── execution/
+|    |    |    ├── risk/
+|    |    |    ├── state_machine/
+|    |    ├── Dockerfile
+|    |    ├── go.mod
+|    |    ├── go.sum
+│    ├── ingestor-go/        # Market data ingestion
+|    |    ├── cmd/
+|    |    |    ├── main.go
+|    |    ├── internal/
+|    |    |    ├── redis/
+|    |    |    ├── redis_client/
+|    |    |    ├── validator/
+|    |    |    ├── websocket/
+|    |    ├── Dockerfile
+|    |    ├── go.mod
+|    |    ├── go.sum
+│    ├── strategy-python/    # Strategy engine (indicators & signals)
+|    |    ├── bridge/
+|    |    ├── engine/
+|    |    ├── venv/
+|    |    ├── Dockerfile
+|    |    ├── main.py
+|    |    ├── requirements.txt
+├── shared/                   # Shared utilities
+|    ├── events/
+|    ├── schemas/
+├── state/                  # Persistent trading state
 ├── tests/                  # Backtest & paper trading
-└── docs/                   # Architecture & strategy docs
+|    ├── backtest/
+|    ├── integration/
+|    ├── paper_trade/
+|    ├── simulation/
+├── .env
+├── .gitignore
+├── docker-compose.yml
+├── init-project.sh
+├── Makefile
 ```
 
 ---
